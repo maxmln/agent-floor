@@ -17,6 +17,22 @@ const clip = (s, n = 42) => {
   return s.length > n ? s.slice(0, n - 1) + '…' : s;
 };
 
+// Mask anything that looks like a credential before it reaches a label or the log.
+const SECRET_PATTERNS = [
+  /\b(sk|pk|rk)-[A-Za-z0-9_-]{8,}/g,
+  /\b(ghp|gho|ghu|ghs|github_pat)_[A-Za-z0-9_]{8,}/g,
+  /\bAKIA[0-9A-Z]{12,}/g,
+  /\bAIza[0-9A-Za-z_-]{20,}/g,
+  /\br8_[A-Za-z0-9]{8,}/g,
+  /\bxox[abprs]-[A-Za-z0-9-]{8,}/g,
+  /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+  /(bearer|basic)\s+[A-Za-z0-9._~+\/=-]{8,}/gi,
+  /\b([A-Za-z_]*(key|token|secret|password|passwd|pwd|auth)[A-Za-z_]*)\s*[=:]\s*("[^"]*"|'[^']*'|\S+)/gi,
+];
+const redact = (s) =>
+  SECRET_PATTERNS.reduce((out, re) => out.replace(re, (m, name, _k, _v) =>
+    re.source.includes('[=:]') ? `${name}=•••` : '•••'), String(s || ''));
+
 // Turn a tool call into a short human label and a screen category.
 function describe(tool = '', input = {}) {
   input = input || {};
@@ -56,14 +72,14 @@ function describe(tool = '', input = {}) {
 }
 
 function addLog(who, text, cat = 'think', color) {
-  state.log.unshift({ t: Date.now(), who, text, cat, color });
+  state.log.unshift({ t: Date.now(), who, text: redact(text), cat, color });
   state.log.length = Math.min(state.log.length, 60);
 }
 
 function set(target, status, cat, label) {
   target.status = status;
   target.cat = cat;
-  target.label = label;
+  target.label = redact(label);
 }
 
 function handle(e) {
