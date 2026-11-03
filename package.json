@@ -1,0 +1,11 @@
+{
+  "name": "agent-floor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A live office floor that shows Claude Code sessions and subagents at work",
+  "scripts": {
+    "start": "node server.js",
+    "install-hooks": "node install-hooks.js",
+    "uninstall-hooks": "node install-hooks.js --uninstall"
+  }
+}
